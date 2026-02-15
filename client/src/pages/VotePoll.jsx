@@ -3,7 +3,12 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000");
+const API = import.meta.env.VITE_API_URL;
+
+// create socket connection
+const socket = io(API, {
+  transports: ["websocket"],
+});
 
 export default function VotePoll() {
   const { id } = useParams();
@@ -13,10 +18,10 @@ export default function VotePoll() {
   const [message, setMessage] = useState("");
   const [timeLeft, setTimeLeft] = useState("");
 
-  // fetch poll
+  // 🔹 Fetch poll
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/api/polls/${id}`)
+      .get(`${API}/api/polls/${id}`)
       .then((res) => {
         setPoll(res.data);
         setLoading(false);
@@ -27,7 +32,7 @@ export default function VotePoll() {
       });
   }, [id]);
 
-  // ⏱️ countdown timer
+  // 🔹 Countdown timer
   useEffect(() => {
     if (!poll) return;
 
@@ -55,24 +60,28 @@ export default function VotePoll() {
     return () => clearInterval(interval);
   }, [poll]);
 
-  // real-time vote updates
+  // 🔹 Real-time vote updates
   useEffect(() => {
+    socket.emit("joinPoll", id);
+
     socket.on("voteUpdate", (data) => {
       if (data.pollId === id) {
         setPoll((prev) => ({ ...prev, options: data.results }));
       }
     });
 
-    return () => socket.off("voteUpdate");
+    return () => {
+      socket.off("voteUpdate");
+      socket.emit("leavePoll", id);
+    };
   }, [id]);
 
-  // vote handler
+  // 🔹 Vote handler
   const handleVote = async (index) => {
     try {
-      const res = await axios.post(
-        `http://localhost:5000/api/polls/${id}/vote`,
-        { optionIndex: index }
-      );
+      const res = await axios.post(`${API}/api/polls/${id}/vote`, {
+        optionIndex: index,
+      });
 
       setPoll((prev) => ({ ...prev, options: res.data.results }));
       setMessage("✅ Vote recorded");
@@ -81,13 +90,14 @@ export default function VotePoll() {
     }
   };
 
-  if (loading) return <h2 style={{ textAlign: "center" }}>Loading poll...</h2>;
-  if (!poll) return <h2 style={{ textAlign: "center" }}>{message}</h2>;
+  // 🔹 Loading / error states
+  if (loading) return <h2 className="center">Loading poll...</h2>;
+  if (!poll) return <h2 className="center">{message}</h2>;
 
   const totalVotes = poll.options.reduce((sum, o) => sum + o.votes, 0);
 
   return (
-    <div className="page" style={{ textAlign: "center" }}>
+    <div className="page center">
       <h1>{poll.question}</h1>
 
       {/* ⏱️ TIMER */}
@@ -100,7 +110,7 @@ export default function VotePoll() {
           : 0;
 
         return (
-          <div key={i} style={{ marginBottom: 16 }}>
+          <div key={i} className="option-wrapper">
             <button
               className="option"
               onClick={() => handleVote(i)}
@@ -109,7 +119,7 @@ export default function VotePoll() {
               {opt.text} — {opt.votes} votes ({percent}%)
             </button>
 
-            {/* Vote bar */}
+            {/* vote bar */}
             <div className="bar">
               <div className="bar-fill" style={{ width: `${percent}%` }} />
             </div>
@@ -118,9 +128,7 @@ export default function VotePoll() {
       })}
 
       {/* MESSAGE */}
-      {message && (
-        <p style={{ marginTop: 15, fontWeight: "bold" }}>{message}</p>
-      )}
+      {message && <p className="message">{message}</p>}
     </div>
   );
 }

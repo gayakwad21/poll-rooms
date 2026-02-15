@@ -11,19 +11,25 @@ function CreatePoll() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const API = import.meta.env.VITE_API_URL;
+
+  // handle option change
   const handleOptionChange = (value, index) => {
     const updated = [...options];
     updated[index] = value;
     setOptions(updated);
   };
 
+  // add new option
   const addOption = () => setOptions([...options, ""]);
 
+  // remove option
   const removeOption = (index) => {
     if (options.length <= 2) return;
     setOptions(options.filter((_, i) => i !== index));
   };
 
+  // validation
   const validateForm = () => {
     if (!question.trim()) return "Question is required";
 
@@ -35,6 +41,7 @@ function CreatePoll() {
     return null;
   };
 
+  // create poll
   const createPoll = async () => {
     const validationError = validateForm();
     if (validationError) {
@@ -46,14 +53,11 @@ function CreatePoll() {
       setLoading(true);
       setError("");
 
-      const res = await axios.post(
-        "http://localhost:5000/api/polls/create",
-        {
-          question,
-          options: options.filter((o) => o.trim() !== ""),
-          expiresInMinutes: Number(expires),
-        }
-      );
+      const res = await axios.post(`${API}/api/polls/create`, {
+        question,
+        options: options.filter((o) => o.trim() !== ""),
+        expiresInMinutes: Number(expires),
+      });
 
       // redirect to vote page
       navigate(`/poll/${res.data.pollId}`);
@@ -69,37 +73,47 @@ function CreatePoll() {
     <div className="page">
       <h1>Create a Poll</h1>
 
+      {/* Question */}
       <input
-        placeholder="Enter question"
+        className="input"
+        placeholder="Enter your question..."
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
       />
 
+      {/* Options */}
       {options.map((opt, i) => (
-        <div key={i} style={{ display: "flex", gap: 10 }}>
+        <div key={i} className="option-row">
           <input
+            className="input"
             placeholder={`Option ${i + 1}`}
             value={opt}
             onChange={(e) => handleOptionChange(e.target.value, i)}
           />
-          <button onClick={() => removeOption(i)}>❌</button>
+          <button className="remove-btn" onClick={() => removeOption(i)}>
+            ❌
+          </button>
         </div>
       ))}
 
-      <button onClick={addOption}>+ Add Option</button>
+      <button className="add-btn" onClick={addOption}>
+        + Add Option
+      </button>
 
-      <div style={{ marginTop: 10 }}>
-        Expiry (minutes):
+      {/* Expiry */}
+      <div className="expiry">
+        <label>Expiry (minutes)</label>
         <input
           type="number"
           value={expires}
           onChange={(e) => setExpires(e.target.value)}
-          style={{ marginTop: 6 }}
         />
       </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {/* Error */}
+      {error && <p className="error">{error}</p>}
 
+      {/* Submit */}
       <button className="primary" onClick={createPoll} disabled={loading}>
         {loading ? "Creating..." : "Create Poll"}
       </button>
