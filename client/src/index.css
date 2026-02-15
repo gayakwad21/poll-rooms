@@ -1,0 +1,75 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f4f6f8;
+}
+
+/* Center container */
+.page {
+  max-width: 600px;
+  margin: 50px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Inputs */
+input {
+  padding: 10px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100%;
+}
+
+/* Buttons */
+button {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button.primary {
+  background: #22c55e;
+  color: white;
+  font-weight: 600;
+}
+
+button.primary:hover {
+  background: #16a34a;
+}
+
+button.option {
+  width: 100%;
+  margin-top: 8px;
+  background: #eef2ff;
+}
+
+button.option:hover {
+  background: #e0e7ff;
+}
+
+/* Timer */
+.timer {
+  font-weight: bold;
+  color: #ef4444;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+/* Vote bar */
+.bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.bar-fill {
+  height: 100%;
+  background: #22c55e;
+}
