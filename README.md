@@ -1,7 +1,7 @@
 Live Deployment
 
 Frontend (Vercel)
-https://poll-rooms.vercel.app
+https://poll-rooms-gray.vercel.app/
 
 Backend API (Render)
 https://poll-backend-tq05.onrender.com
