@@ -2,11 +2,13 @@ const express = require("express");
 const router = express.Router();
 const Poll = require("../models/Poll");
 
-// CREATE POLL
+
+// ================= CREATE POLL =================
 router.post("/create", async (req, res) => {
   try {
     const { question, options, expiresInMinutes } = req.body;
 
+    // validation
     if (!question || !options || options.length < 2) {
       return res.status(400).json({ message: "Invalid poll data" });
     }
@@ -16,7 +18,8 @@ router.post("/create", async (req, res) => {
     const newPoll = new Poll({
       question,
       options: options.map(opt => ({ text: opt })),
-      expiresAt
+      expiresAt,
+      voters: [] // ensure voters array exists
     });
 
     await newPoll.save();
@@ -32,7 +35,7 @@ router.post("/create", async (req, res) => {
 });
 
 
-// VOTE ON POLL
+// ================= VOTE ON POLL =================
 router.post("/:id/vote", async (req, res) => {
   try {
     const poll = await Poll.findById(req.params.id);
@@ -41,6 +44,7 @@ router.post("/:id/vote", async (req, res) => {
       return res.status(404).json({ message: "Poll not found" });
     }
 
+    // expiry check
     if (new Date() > poll.expiresAt) {
       return res.status(400).json({ message: "Poll has expired" });
     }
@@ -51,20 +55,26 @@ router.post("/:id/vote", async (req, res) => {
       return res.status(400).json({ message: "Invalid option" });
     }
 
-    const voterIP = req.ip;
+    // 🔥 REAL CLIENT IP FIX (important for Render/Vercel proxy)
+    const voterIP =
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      req.socket.remoteAddress ||
+      req.ip;
 
+    // prevent duplicate voting
     if (poll.voters.includes(voterIP)) {
       return res.status(403).json({ message: "You already voted" });
     }
 
+    // add vote
     poll.options[optionIndex].votes += 1;
     poll.voters.push(voterIP);
 
     await poll.save();
 
-    // emit live update
+    // emit live update via Socket.IO
     req.app.get("io").emit("voteUpdate", {
-      pollId: poll._id,
+      pollId: poll._id.toString(),
       results: poll.options
     });
 
@@ -79,7 +89,7 @@ router.post("/:id/vote", async (req, res) => {
 });
 
 
-// GET POLL DETAILS  ← ADD HERE
+// ================= GET POLL DETAILS =================
 router.get("/:id", async (req, res) => {
   try {
     const poll = await Poll.findById(req.params.id);
